@@ -9,8 +9,22 @@ describe('MiniMaple', () => {
         const miniMaple = new MiniMaple();
         expect(miniMaple.differentiate("5*x^6").toString()).toBe("30*x^5");
     });
-    it('should throw error at ill-formed text', () => {
+    it('should throw ParserError at ill-formed text', () => {
         const miniMaple = new MiniMaple();
-        expect(miniMaple.differentiate("x^2 +")).toThrow(MiniMapleError);
+        expect(miniMaple.differentiate("x^2 + * 3")).toThrow(expect.objectContaining({
+            name: "MiniMapleError",
+            message: expect.stringContaining(`Ill-formed mathematical expression`),
+            col: 6,
+            originalError: expect.any(ParserError)
+        }));
     });
+    it('should throw LexerError at unexpected text', () => {
+        const miniMaple = new MiniMaple();
+        expect(miniMaple.differentiate("x^2 + @")).toThrow(expect.objectContaining({
+            name: "MiniMapleError",
+            message: expect.stringContaining(`Not a mathematical expression`),
+            col: 6,
+            originalError: expect.any(LexerError)
+        }));
+    })
 });

@@ -3,7 +3,7 @@ import {Lexer} from "../src/lexer.js";
 describe("Lexer", () => {
     it('should tokenize the text of polynomial', () => {
         const lexer = new Lexer();
-        const text = "x^2-(3*x+4/5)"
+        const text = "x^2-(3*x+4/5)";
         const result = [
             new Token(TokenType.ID, "x", 0),
             new Token(TokenType.CARET, "^", 1),
@@ -44,5 +44,21 @@ describe("Lexer", () => {
             col: 4
         }));
     });
+    it('should tokenize variables as longest A-Za-z sequence', () => {
+        const lexer = new Lexer();
+        const text = "sin(x)"
+        const result = [
+            new Token(TokenType.ID, "sin", 0),
+            new Token(TokenType.LPAR, "(", 3),
+            new Token(TokenType.ID, "x", 4),
+            new Token(TokenType.RPAR, ")", 5)
+        ]
+        expect(lexer.tokenize(text)).toEqual(result);
+    })
+    it('should tokenize real numbers', () => {
+        const lexer = new Lexer();
+        const text = "3.141592";
+        expect(lexer.tokenize(text)).toEqual(new Token(TokenType.NUMBER, "3.141592"));
+    })
 
 })

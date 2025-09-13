@@ -1,31 +1,28 @@
-import {Parser} from "../src/parser.js"
+import { Parser } from "../src/parser.js"
+import * as Nodes from "../src/astnodes.js"
 
 describe("Parser", () => {
     it('should create valid AST from a polynomial', () => {
         const parser = new Parser();
         const text = "x^2-(3*x+4/5)";
-        const result = new ExpressionNode(
-            new BinOpNode(
-                new BinOpNode(
-                    new VariableNode("x"),
-                    OperationType.POWER,
-                    new NumberNode(2)
+        new Nodes.BinOpNode(
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("x"),
+                Nodes.OperationType.POWER,
+                new Nodes.NumberNode(2)
+            ),
+            Nodes.OperationType.SUBTRACT,
+            new Nodes.BinOpNode(
+                new Nodes.BinOpNode(
+                    new Nodes.NumberNode(3),
+                    Nodes.OperationType.MULTIPLY,
+                    new Nodes.VariableNode("x")
                 ),
-                OperationType.SUBTRACT,
-                new ExpressionNode(
-                    new BinOpNode(
-                        new BinOpNode(
-                            new NumberNode(3),
-                            OperationType.MULTIPLY,
-                            new VariableNode("x")
-                        ),
-                        OperationType.PLUS,
-                        new BinOpNode(
-                            new NumberNode(4),
-                            OperationType.DIVIDE,
-                            new NumberNode(5)
-                        )
-                    )
+                Nodes.OperationType.PLUS,
+                new Nodes.BinOpNode(
+                    new Nodes.NumberNode(4),
+                    Nodes.OperationType.DIVIDE,
+                    new Nodes.NumberNode(5)
                 )
             )
         );

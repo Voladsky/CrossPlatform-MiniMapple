@@ -17,7 +17,8 @@ describe("Lexer", () => {
             new Token(TokenType.NUMBER, 4, 9),
             new Token(TokenType.DIVIDE, "/", 10),
             new Token(TokenType.NUMBER, 5, 11),
-            new Token(TokenType.RPAR, ")", 12)
+            new Token(TokenType.RPAR, ")", 12),
+            new Token(TokenType.EOF, "", 13)
         ];
         expect(lexer.tokenize(text)).toEqual(result);
     });
@@ -31,7 +32,8 @@ describe("Lexer", () => {
             new Token(TokenType.MINUS, "-", 6),
             new Token(TokenType.NUMBER, 5, 8),
             new Token(TokenType.ASTERISK, "*", 14),
-            new Token(TokenType.ID, "x", 16)
+            new Token(TokenType.ID, "x", 16),
+            new Token(TokenType.EOF, "", 22)
         ];
         expect(lexer.tokenize(text)).toEqual(result);
     });
@@ -51,14 +53,20 @@ describe("Lexer", () => {
             new Token(TokenType.ID, "sin", 0),
             new Token(TokenType.LPAR, "(", 3),
             new Token(TokenType.ID, "x", 4),
-            new Token(TokenType.RPAR, ")", 5)
+            new Token(TokenType.RPAR, ")", 5),
+            new Token(TokenType.EOF, "", 6)
         ]
         expect(lexer.tokenize(text)).toEqual(result);
     })
     it('should tokenize real numbers', () => {
         const lexer = new Lexer();
         const text = "3.141592";
-        expect(lexer.tokenize(text)).toEqual([new Token(TokenType.NUMBER, 3.141592, 0)]);
+        expect(lexer.tokenize(text)).toEqual(
+            [
+                new Token(TokenType.NUMBER, 3.141592, 0),
+                new Token(TokenType.EOF, "", 8)
+            ]
+        );
     })
 
 })

@@ -8,6 +8,7 @@ class TokenType {
     static #_DIVIDE     = "DIVIDE";
     static #_LPAR       = "LPAR";
     static #_RPAR       = "RPAR";
+    static #_EOF        = "EOF";
 
     static get ID() { return this.#_ID }
     static get NUMBER() { return this.#_NUMBER }
@@ -18,6 +19,7 @@ class TokenType {
     static get DIVIDE() { return this.#_DIVIDE}
     static get LPAR() { return this.#_LPAR}
     static get RPAR() { return this.#_RPAR}
+    static get EOF() { return this.#_EOF}
 }
 
 class Token {
@@ -109,15 +111,15 @@ class Lexer {
                     throw new LexerError(`Unexpected token: '${this.curChar}'`, this.pos);
             }
         }
-        return null;
+        return new Token(TokenType.EOF, "", this.pos);
     }
     tokenize(text) {
         this.reset(text);
         const tokens = [];
         while (true) {
             const newtok = this.nextToken();
-            if (!newtok) break;
             tokens.push(newtok);
+            if (newtok.type == TokenType.EOF) break;
         }
         return tokens;
     }

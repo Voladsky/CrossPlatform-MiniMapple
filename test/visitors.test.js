@@ -1,5 +1,5 @@
 import * as Nodes from "../src/astnodes.js"
-import { PrintVisitor } from "../src/visitors.js"
+import { PrintVisitor, DerivationVisitor } from "../src/visitors.js"
 
 describe("PrintVisitor", () => {
     it("should iterate over AST and print it into a single string", () => {
@@ -30,6 +30,20 @@ describe("PrintVisitor", () => {
         );
         expect(visitor.visit(tree)).toEqual("x^2-3*(x+5)+4/5");
     })
+    it('should display derivative over expr', () => {
+        const visitor = new PrintVisitor();
+        const tree = new Nodes.DiffNode(new Nodes.VariableNode("x"));
+        expect(visitor.visit(tree)).toEqual("x'")
+    })
+    it('should put always put parentheses over derivative', () => {
+        const visitor = new PrintVisitor();
+        const tree = new Nodes.DiffNode(new Nodes.BinOpNode(
+            new Nodes.VariableNode("x"),
+            Nodes.OperationType.MULTIPLY,
+            new Nodes.VariableNode("y")
+        ));
+        expect(visitor.visit(tree)).toEqual("(x*y)'")
+    })
 })
 
 describe("DerivationVisitor", () => {
@@ -38,7 +52,7 @@ describe("DerivationVisitor", () => {
         const expr = new Nodes.VariableNode("x");
         expect(visitor.visit(expr, 0)).toEqual(new Nodes.DiffNode(new Nodes.VariableNode("x")));
     })
-    it("should propagate the derivation into the sum according to rule", () => {
+    it("should propagate the derivation into the addition according to rule", () => {
         const visitor = new DerivationVisitor();
         const expr = new Nodes.BinOpNode(
             new Nodes.VariableNode("x"),
@@ -54,6 +68,22 @@ describe("DerivationVisitor", () => {
         );
         expect(result).toEqual(expected);
     });
+    it('should propagate the derivation into the subtraction according to rule', () => {
+        const visitor = new DerivationVisitor();
+        const expr = new Nodes.BinOpNode(
+            new Nodes.VariableNode("x"),
+            Nodes.OperationType.SUBTRACT,
+            new Nodes.VariableNode("y")
+        );
+        const result = visitor.visit(expr, 1);
+
+        const expected = new Nodes.BinOpNode(
+            new Nodes.DiffNode(new Nodes.VariableNode("x")),
+            Nodes.OperationType.SUBTRACT,
+            new Nodes.DiffNode(new Nodes.VariableNode("y"))
+        );
+        expect(result).toEqual(expected);
+    })
     it("should propagate the derivation into the multiplication according to rule", () => {
         const visitor = new DerivationVisitor();
         const expr = new Nodes.BinOpNode(

@@ -9,6 +9,14 @@ class ASTNode {
     }
 }
 
+// Intermediate node for derivation
+export class DiffNode extends ASTNode {
+    constructor(node) {
+        super();
+        this.deriving = node;
+    }
+}
+
 export class BinOpNode extends ASTNode {
     constructor(left, operator, right) {
         super();

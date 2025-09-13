@@ -35,37 +35,34 @@ export class DerivationVisitor extends BaseVisitor {
     visit(node, ...args) {
         if (args[0] === 0) {
             const diffNode = new DiffNode(node);
-            if (node instanceof BinOpNode) {
-                diffNode._canPropagate = true;
-            }
             return diffNode;
         }
-        super.visit(node, ...args);
+        return super.visit(node, ...args);
     }
     visitBinOpNode(node, ...args) {
-        if (!node._canPropagate) return node;
         const depth = args[0];
         const left_result = this.visit(node.left, depth - 1);
-        const right_result = this.visit(node.left, depth - 1);
+        const right_result = this.visit(node.right, depth - 1);
         let result = null;
         switch (node.operator) {
             case OperationType.ADD:
-                result = new BinOpNode(this.visit(node.left, depth - 1), OperationType.ADD, this.visit(node.right, depth - 1))
+                result = new BinOpNode(left_result, OperationType.ADD, right_result)
                 break;
             case OperationType.SUBTRACT:
-                result = new BinOpNode(this.visit(node.left, depth - 1), OperationType.SUBTRACT, this.visit(node.right, depth - 1))
+                result = new BinOpNode(left_result, OperationType.SUBTRACT, right_result)
                 break;
             case OperationType.MULTIPLY:
                 result = new BinOpNode(
                     new BinOpNode(
-                        this.visit(node.left, depth - 1),
+                        left_result,
                         OperationType.MULTIPLY,
                         node.right
                     ),
-                    BinOpNode(
+                    OperationType.ADD,
+                    new BinOpNode(
                         node.left,
                         OperationType.MULTIPLY,
-                        this.visit(node.right, depth - 1)
+                        right_result
                     )
                 )
                 break;
@@ -73,20 +70,20 @@ export class DerivationVisitor extends BaseVisitor {
                 result = new BinOpNode(
                     new BinOpNode(
                         new BinOpNode(
-                            this.visit(node.left, depth - 1),
+                            left_result,
                             OperationType.MULTIPLY,
                             node.right
                         ),
                         OperationType.SUBTRACT,
-                        BinOpNode(
+                        new BinOpNode(
                             node.left,
                             OperationType.MULTIPLY,
-                            this.visit(node.right, depth - 1)
+                            right_result
                         )
                     ),
                     OperationType.DIVIDE,
                     new BinOpNode(
-                        right,
+                        node.right,
                         OperationType.POWER,
                         new NumberNode(2)
                     )
@@ -95,15 +92,12 @@ export class DerivationVisitor extends BaseVisitor {
             default:
                 throw new Error(`Unknown operator '${node.operator}'`);
         }
-        result._canPropagate = left_result._canPropagate || right_result._canPropagate;
+        return result;
     }
     visitVariableNode(node) {
         return new DiffNode(node);
     }
     visitNumberNode(node) {
         return new DiffNode(node);
-    }
-    canPropagate(node) {
-        return node._canPropagate;
     }
 }

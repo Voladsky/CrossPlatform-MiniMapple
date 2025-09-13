@@ -4,8 +4,8 @@ class ASTNode {
             throw new Error("Trying to create abstract export class ASTNode");
         }
     }
-    accept(v) {
-        return eval(`v.visit${this.constructor.name}`);
+    accept(v, ...args) {
+        return v[`visit${this.constructor.name}`](this, ...args);
     }
 }
 
@@ -33,11 +33,11 @@ export class NumberNode extends ASTNode {
 }
 
 export class OperationType {
-    static #_ADD        = "ADD";
-    static #_SUBTRACT   = "SUBTRACT";
-    static #_MULTIPLY   = "MULTIPLY"
-    static #_DIVIDE     = "DIVIDE";
-    static #_POWER      = "POWER";
+    static #_ADD        = "+";
+    static #_SUBTRACT   = "-";
+    static #_MULTIPLY   = "*"
+    static #_DIVIDE     = "/";
+    static #_POWER      = "^";
 
     static get ADD() { return this.#_ADD}
     static get SUBTRACT() { return this.#_SUBTRACT}
@@ -46,4 +46,10 @@ export class OperationType {
     static get POWER() { return this.#_POWER}
 }
 
-
+export const PRECEDENCE = {
+    [OperationType.POWER]: 4,
+    [OperationType.MULTIPLY]: 3,
+    [OperationType.DIVIDE]: 3,
+    [OperationType.ADD]: 2,
+    [OperationType.SUBTRACT]: 2
+};

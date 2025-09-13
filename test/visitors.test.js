@@ -131,14 +131,14 @@ describe("DerivationVisitor", () => {
                     Nodes.OperationType.MULTIPLY,
                     new Nodes.DiffNode(new Nodes.VariableNode("y"))
                 ),
-                Nodes.OperationType.DIVIDE,
-                new Nodes.BinOpNode(
-                    new Nodes.VariableNode("y"),
-                    Nodes.OperationType.POWER,
-                    new Nodes.NumberNode(2)
-                )
+            ),
+            Nodes.OperationType.DIVIDE,
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("y"),
+                Nodes.OperationType.POWER,
+                new Nodes.NumberNode(2)
             )
         );
-        expect(result).toEqual(expected);
-    })
+    expect(result).toEqual(expected);
+})
 })

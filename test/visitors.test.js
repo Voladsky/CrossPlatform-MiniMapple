@@ -1,5 +1,5 @@
 import * as Nodes from "../src/astnodes.js"
-import { PrintVisitor, DerivationVisitor } from "../src/visitors.js"
+import { PrintVisitor, DerivationVisitor, EvaluationVisitor } from "../src/visitors.js"
 
 describe("PrintVisitor", () => {
     it("should iterate over AST and print it into a single string", () => {
@@ -139,6 +139,45 @@ describe("DerivationVisitor", () => {
                 new Nodes.NumberNode(2)
             )
         );
-    expect(result).toEqual(expected);
+        expect(result).toEqual(expected);
+    })
 })
+
+describe("EvaluationVisitor", () => {
+    it("should evaluate fully propagated diffnodes", () => {
+        const visitor = new EvaluationVisitor();
+        const tree = new Nodes.DiffNode(new Nodes.VariableNode("x"))
+        const tree_numeric = new Nodes.DiffNode(new Nodes.NumberNode(3));
+        const tree_another_literal = new Nodes.DiffNode(new Nodes.VariableNode("y"));
+        expect(visitor.visit(tree, "x")).toEqual(new Nodes.NumberNode(1));
+        expect(visitor.visit(tree_numeric, "x")).toEqual(new Nodes.NumberNode(0));
+        expect(visitor.visit(tree_another_literal, "x")).toEqual(new Nodes.NumberNode(0));
+    })
+    it("should throw an error when encountering not fully propagated node", () => {
+        const visitor = new EvaluationVisitor();
+        const tree = new Nodes.DiffNode(
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("x"),
+                Nodes.OperationType.ADD,
+                new Nodes.VariableNode("y")
+            )
+        )
+        expect(() => visitor.visit(tree)).toThrow();
+    })
+    it("should perform calculations on binops which are both numerical", () => {
+        const visitor = new EvaluationVisitor();
+        const add = new Nodes.BinOpNode(
+            new Nodes.NumberNode(38), Nodes.OperationType.ADD, new Nodes.NumberNode(4));
+        const sub = new Nodes.BinOpNode(
+            new Nodes.NumberNode(45), Nodes.OperationType.SUBTRACT, new Nodes.NumberNode(3));
+        const mul = new Nodes.BinOpNode(
+            new Nodes.NumberNode(6), Nodes.OperationType.MULTIPLY, new Nodes.NumberNode(7));
+        const div = new Nodes.BinOpNode(
+            new Nodes.NumberNode(126), Nodes.OperationType.DIVIDE, new Nodes.NumberNode(3)
+        )
+        expect(visitor.visit(add)).toEqual(new Nodes.NumberNode(42));
+        expect(visitor.visit(sub)).toEqual(new Nodes.NumberNode(42));
+        expect(visitor.visit(mul)).toEqual(new Nodes.NumberNode(42));
+        expect(visitor.visit(div)).toEqual(new Nodes.NumberNode(42));
+    })
 })

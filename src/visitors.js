@@ -1,4 +1,4 @@
-import { BinOpNode, DiffNode, NumberNode, OperationType, PRECEDENCE } from "./astnodes";
+import { BinOpNode, DiffNode, NumberNode, OperationType, PRECEDENCE, VariableNode } from "./astnodes";
 
 class BaseVisitor {
     visit(node, ...args) { return node.accept(this, ...args); }
@@ -99,5 +99,38 @@ export class DerivationVisitor extends BaseVisitor {
     }
     visitNumberNode(node) {
         return new DiffNode(node);
+    }
+}
+
+export class EvaluationVisitor extends BaseVisitor {
+    visitDiffNode(node, literal) {
+        const value = this._derive(node.deriving, literal);
+        return new NumberNode(value);
+    }
+    _derive(node, literal) {
+        if (node instanceof VariableNode) {
+            if (node.name === literal)
+                return 1;
+            else return 0;
+        }
+        if (node instanceof NumberNode) {
+            return 0;
+        }
+        throw new Error("Derivation is not propagated enough")
+    }
+    visitBinOpNode(node, ...args) {
+        const literal = args[0];
+        const left_result = this.visit(node.left, ...args);
+        const right_result = this.visit(node.right, ...args);
+        if (left_result instanceof NumberNode && right_result instanceof NumberNode) {
+            return new NumberNode(eval(`${left_result.value}${node.operator}${right_result.value}`));
+        }
+        return new BinOpNode(left_result, node.operator, right_result);
+    }
+    visitNumberNode(node) {
+        return node;
+    }
+    visitVariableNode(node) {
+        return node;
     }
 }

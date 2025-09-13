@@ -33,94 +33,82 @@ describe("PrintVisitor", () => {
 })
 
 describe("DerivationVisitor", () => {
-    it("should derive the expression AST by given variable name and return an AST of the derived expression", () => {
+    it("should perform a step of derivation by wrapping the node in DiffNode", () => {
         const visitor = new DerivationVisitor();
         const expr = new Nodes.VariableNode("x");
-        expect(visitor.deriveOver("x", expr)).toEqual(new Nodes.NumberNode(1));
+        expect(visitor.visit(expr, "x", 0)).toEqual(new Nodes.DiffNode(new Nodes.VariableNode("x")));
     })
-    it("should derive all operations correctly", () => {
+    it("should propagate the derivation into the sum according to rule", () => {
         const visitor = new DerivationVisitor();
-        const expr_add = new Nodes.BinOpNode(
+        const expr = new Nodes.BinOpNode(
             new Nodes.VariableNode("x"),
             Nodes.OperationType.ADD,
-            new Nodes.BinOpNode(
-                new Nodes.NumberNode(5),
-                Nodes.OperationType.MULTIPLY,
-                new Nodes.VariableNode("x")
-            )
+            new Nodes.VariableNode("y")
         );
-        const expr_sub = new Nodes.BinOpNode(
-            new Nodes.VariableNode("x"),
+        const result = visitor.visit(expr, "x", 1);
+
+        const expected = new Nodes.BinOpNode(
+            new Nodes.DiffNode(new Nodes.VariableNode("x")),
             Nodes.OperationType.ADD,
-            new Nodes.BinOpNode(
-                new Nodes.NumberNode(5),
-                Nodes.OperationType.SUBTRACT,
-                new Nodes.VariableNode("x")
-            )
+            new Nodes.DiffNode(new Nodes.VariableNode("y"))
         );
-        const expr_mult = new Nodes.BinOpNode(
+        expect(result).toEqual(expected);
+    });
+    it("should propagate the derivation into the multiplication according to rule", () => {
+        const visitor = new DerivationVisitor();
+        const expr = new Nodes.BinOpNode(
             new Nodes.VariableNode("x"),
             Nodes.OperationType.MULTIPLY,
+            new Nodes.VariableNode("y")
+        );
+        const result = visitor.visit(expr, "x", 1);
+
+        const expected = new Nodes.BinOpNode(
             new Nodes.BinOpNode(
-                new Nodes.NumberNode(5),
+                new Nodes.DiffNode(new Nodes.VariableNode("x")),
                 Nodes.OperationType.MULTIPLY,
-                new Nodes.VariableNode("x")
+                new Nodes.VariableNode("y")
+            ),
+            Nodes.OperationType.ADD,
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("x"),
+                Nodes.OperationType.MULTIPLY,
+                new Nodes.DiffNode(new Nodes.VariableNode("y"))
             )
         );
-        const expr_div = new Nodes.BinOpNode(
+        expect(result).toEqual(expected);
+    })
+
+    it("should propagate the derivation into the division according to rule", () => {
+        const visitor = new DerivationVisitor();
+        const expr = new Nodes.BinOpNode(
             new Nodes.VariableNode("x"),
             Nodes.OperationType.DIVIDE,
+            new Nodes.VariableNode("y")
+        );
+        const result = visitor.visit(expr, "x", 1);
+
+        const expected = new Nodes.BinOpNode(
             new Nodes.BinOpNode(
-                new Nodes.NumberNode(5),
-                Nodes.OperationType.MULTIPLY,
-                new Nodes.VariableNode("x")
+                new Nodes.BinOpNode(
+                    new Nodes.DiffNode(new Nodes.VariableNode("x")),
+                    Nodes.OperationType.MULTIPLY,
+                    new Nodes.VariableNode("y")
+                ),
+                Nodes.OperationType.SUBTRACT,
+                new Nodes.BinOpNode(
+                    new Nodes.VariableNode("x"),
+                    Nodes.OperationType.MULTIPLY,
+                    new Nodes.DiffNode(new Nodes.VariableNode("y"))
+                ),
+                Nodes.OperationType.DIVIDE,
+                new Nodes.BinOpNode(
+                    new Nodes.VariableNode("y"),
+                    Nodes.OperationType.POWER,
+                    new Nodes.NumberNode(2)
+                )
             )
         );
-        expect(visitor.visit(expr_add)).toEqual(
-            new Nodes.BinOpNode(
-                new Number(1),
-                Nodes.OperationType.ADD,
-                new Number(5)
-            ))
-        expect(visitor.visit(expr_sub)).toEqual(
-            new Nodes.BinOpNode(
-                new Number(1),
-                Nodes.OperationType.SUBTRACT,
-                new Number(5)
-            ))
-        expect(visitor.visit(expr_mult)).toEqual(
-            new Nodes.BinOpNode(
-                new Nodes.VariableNode("1"),
-                Nodes.OperationType.MULTIPLY,
-                new Nodes.BinOpNode(
-                    new Nodes.NumberNode(5),
-                    Nodes.OperationType.MULTIPLY,
-                    new Nodes.VariableNode("x")
-                ),
-                Nodes.OperationType.ADD,
-                new Nodes.BinOpNode(
-                    new Nodes.VariableNode("x"),
-                    Nodes.OperationType.MULTIPLY,
-                    new Number(5)
-                )
-            )
-        )
-        expect(visitor.visit(expr_div)).toEqual(
-            new Nodes.BinOpNode(
-                new Nodes.VariableNode("1"),
-                Nodes.OperationType.MULTIPLY,
-                new Nodes.BinOpNode(
-                    new Nodes.NumberNode(5),
-                    Nodes.OperationType.MULTIPLY,
-                    new Nodes.VariableNode("x")
-                ),
-                Nodes.OperationType.SUBTRACT,
-                new Nodes.BinOpNode(
-                    new Nodes.VariableNode("x"),
-                    Nodes.OperationType.MULTIPLY,
-                    new Number(5)
-                )
-            )
-        )
+        expect(result).toEqual(expected);
     })
 })

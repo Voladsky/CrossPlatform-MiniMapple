@@ -1,4 +1,4 @@
-import {Lexer, TokenType, Token} from "../src/lexer.js";
+import {Lexer, TokenType, Token, LexerError} from "../src/lexer.js";
 
 describe("Lexer", () => {
     it('should tokenize the text of polynomial', () => {
@@ -27,9 +27,9 @@ describe("Lexer", () => {
         const result = [
             new Token(TokenType.ID, "x", 0),
             new Token(TokenType.CARET, "^", 2),
-            new Token(TokenType.NUMBER, "2", 4),
+            new Token(TokenType.NUMBER, 2, 4),
             new Token(TokenType.MINUS, "-", 6),
-            new Token(TokenType.NUMBER, "5", 8),
+            new Token(TokenType.NUMBER, 5, 8),
             new Token(TokenType.ASTERISK, "*", 14),
             new Token(TokenType.ID, "x", 16)
         ];
@@ -38,7 +38,7 @@ describe("Lexer", () => {
     it('should throw an error to illegal token', () => {
         const lexer = new Lexer();
         const text = "x + @";
-        expect(lexer.tokenize(text)).toThrow(expect.objectContaining({
+        expect(() => lexer.tokenize(text)).toThrow(expect.objectContaining({
             name: "LexerError",
             message: expect.stringContaining("Unexpected token"),
             col: 4
@@ -58,7 +58,7 @@ describe("Lexer", () => {
     it('should tokenize real numbers', () => {
         const lexer = new Lexer();
         const text = "3.141592";
-        expect(lexer.tokenize(text)).toEqual(new Token(TokenType.NUMBER, "3.141592"));
+        expect(lexer.tokenize(text)).toEqual([new Token(TokenType.NUMBER, 3.141592, 0)]);
     })
 
 })

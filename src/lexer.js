@@ -47,13 +47,13 @@ class Lexer {
         }
     }
     skipWhitespaces() {
-        while (this.curChar.trim() == '') {
+        while (this.curChar && this.curChar.trim() == '') {
             this.nextChar();
         }
     }
     number() {
         let res = "";
-        while (this.curChar >= '0' && this.curChar <= '9' || this.curChar === '.') {
+        while (this.curChar && (this.curChar >= '0' && this.curChar <= '9' || this.curChar === '.')) {
             res += this.curChar;
             this.nextChar();
         }
@@ -61,51 +61,55 @@ class Lexer {
     }
     id() {
         let id = "";
-        while (this.curChar >= 'A' && this.curChar <= "Z" || this.curChar >= 'a' && this.curChar <= 'z') {
+        while (this.curChar && (this.curChar >= 'A' && this.curChar <= "Z" || this.curChar >= 'a' && this.curChar <= 'z')) {
             id += this.curChar;
             this.nextChar();
         }
         return id;
     }
     nextToken() {
-        if (!this.curChar) {
-            return null;
-        }
-        if (this.curChar >= '0' && this.curChar <= '9') {
-            const oldpos = this.pos;
-            const num = this.number();
-            return new Token(TokenType.NUMBER, num, oldpos);
-        }
-        if (this.curChar >= 'A' && this.curChar <= "Z" || this.curChar >= 'a' && this.curChar <= 'z') {
-            const oldpos = this.pos;
-            const id = this.id();
-            return new Token(TokenType.ID, id, oldpos);
-        }
-        switch (this.curChar) {
+        while (this.curChar) {
+            if (this.curChar.trim() === "") {
+                this.skipWhitespaces();
+                continue;
+            }
+            if (this.curChar >= '0' && this.curChar <= '9') {
+                const oldpos = this.pos;
+                const num = this.number();
+                return new Token(TokenType.NUMBER, num, oldpos);
+            }
+            if (this.curChar >= 'A' && this.curChar <= "Z" || this.curChar >= 'a' && this.curChar <= 'z') {
+                const oldpos = this.pos;
+                const id = this.id();
+                return new Token(TokenType.ID, id, oldpos);
+            }
+            switch (this.curChar) {
                 case '+':
-                   this.nextChar();
-                   return new Token(TokenType.PLUS, '+', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.PLUS, '+', this.pos - 1);
                 case '-':
-                   this.nextChar();
-                   return new Token(TokenType.MINUS, '-', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.MINUS, '-', this.pos - 1);
                 case '*':
-                   this.nextChar();
-                   return new Token(TokenType.ASTERISK, '*', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.ASTERISK, '*', this.pos - 1);
                 case '/':
                     this.nextChar();
                     return new Token(TokenType.DIVIDE, '/', this.pos - 1);
                 case '^':
-                   this.nextChar();
-                   return new Token(TokenType.CARET, '^', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.CARET, '^', this.pos - 1);
                 case '(':
-                   this.nextChar();
-                   return new Token(TokenType.LPAR, '(', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.LPAR, '(', this.pos - 1);
                 case ')':
-                   this.nextChar();
-                   return new Token(TokenType.RPAR, ')', this.pos - 1);
+                    this.nextChar();
+                    return new Token(TokenType.RPAR, ')', this.pos - 1);
                 default:
-                   throw new LexerError(`Unexpected token: '${this.curChar}'`, this.pos);
+                    throw new LexerError(`Unexpected token: '${this.curChar}'`, this.pos);
+            }
         }
+        return null;
     }
     tokenize(text) {
         this.reset(text);
@@ -122,7 +126,7 @@ class Lexer {
 class LexerError extends Error {
     constructor(message, pos) {
         super(message);
-        this.pos = pos;
+        this.col = pos;
         this.name = this.constructor.name;
         Error.captureStackTrace(this, this.constructor);
     }

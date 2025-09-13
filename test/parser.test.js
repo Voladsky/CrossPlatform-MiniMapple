@@ -5,7 +5,7 @@ describe("Parser", () => {
     it('should create valid AST from a polynomial', () => {
         const parser = new Parser();
         const text = "x^2-(3*x+4/5)";
-        new Nodes.BinOpNode(
+        const result = new Nodes.BinOpNode(
             new Nodes.BinOpNode(
                 new Nodes.VariableNode("x"),
                 Nodes.OperationType.POWER,
@@ -18,7 +18,7 @@ describe("Parser", () => {
                     Nodes.OperationType.MULTIPLY,
                     new Nodes.VariableNode("x")
                 ),
-                Nodes.OperationType.PLUS,
+                Nodes.OperationType.ADD,
                 new Nodes.BinOpNode(
                     new Nodes.NumberNode(4),
                     Nodes.OperationType.DIVIDE,
@@ -31,9 +31,9 @@ describe("Parser", () => {
     it('should throw ParserError at ill-formed mathematical expression', () => {
         const parser = new Parser();
         const text = "x^2 - * (3*x+4/5)";
-        expect(parser.parse(text)).toThrow(expect.objectContaining({
+        expect(() => parser.parse(text)).toThrow(expect.objectContaining({
             name: "ParserError",
-            message: expect.stringMatching("Expected .*?, but received *"),
+            message: expect.stringMatching("Expected .*?, found .*"),
             col: 6
         }))
     })

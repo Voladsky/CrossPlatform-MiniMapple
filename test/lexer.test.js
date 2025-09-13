@@ -1,4 +1,4 @@
-import {Lexer} from "../src/lexer.js";
+import {Lexer, TokenType, Token} from "../src/lexer.js";
 
 describe("Lexer", () => {
     it('should tokenize the text of polynomial', () => {
@@ -7,16 +7,16 @@ describe("Lexer", () => {
         const result = [
             new Token(TokenType.ID, "x", 0),
             new Token(TokenType.CARET, "^", 1),
-            new Token(TokenType.NUMBER, "2", 2),
+            new Token(TokenType.NUMBER, 2, 2),
             new Token(TokenType.MINUS, "-", 3),
             new Token(TokenType.LPAR, "(", 4),
-            new Token(TokenType.NUMBER, "3", 5),
+            new Token(TokenType.NUMBER, 3, 5),
             new Token(TokenType.ASTERISK, "*", 6),
             new Token(TokenType.ID, "x", 7),
             new Token(TokenType.PLUS, "+", 8),
-            new Token(TokenType.NUMBER, "4", 9),
+            new Token(TokenType.NUMBER, 4, 9),
             new Token(TokenType.DIVIDE, "/", 10),
-            new Token(TokenType.NUMBER, "5", 11),
+            new Token(TokenType.NUMBER, 5, 11),
             new Token(TokenType.RPAR, ")", 12)
         ];
         expect(lexer.tokenize(text)).toEqual(result);

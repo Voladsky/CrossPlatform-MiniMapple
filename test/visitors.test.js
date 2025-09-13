@@ -36,7 +36,7 @@ describe("DerivationVisitor", () => {
     it("should perform a step of derivation by wrapping the node in DiffNode", () => {
         const visitor = new DerivationVisitor();
         const expr = new Nodes.VariableNode("x");
-        expect(visitor.visit(expr, "x", 0)).toEqual(new Nodes.DiffNode(new Nodes.VariableNode("x")));
+        expect(visitor.visit(expr, 0)).toEqual(new Nodes.DiffNode(new Nodes.VariableNode("x")));
     })
     it("should propagate the derivation into the sum according to rule", () => {
         const visitor = new DerivationVisitor();
@@ -45,7 +45,7 @@ describe("DerivationVisitor", () => {
             Nodes.OperationType.ADD,
             new Nodes.VariableNode("y")
         );
-        const result = visitor.visit(expr, "x", 1);
+        const result = visitor.visit(expr, 1);
 
         const expected = new Nodes.BinOpNode(
             new Nodes.DiffNode(new Nodes.VariableNode("x")),
@@ -61,7 +61,7 @@ describe("DerivationVisitor", () => {
             Nodes.OperationType.MULTIPLY,
             new Nodes.VariableNode("y")
         );
-        const result = visitor.visit(expr, "x", 1);
+        const result = visitor.visit(expr, 1);
 
         const expected = new Nodes.BinOpNode(
             new Nodes.BinOpNode(
@@ -86,7 +86,7 @@ describe("DerivationVisitor", () => {
             Nodes.OperationType.DIVIDE,
             new Nodes.VariableNode("y")
         );
-        const result = visitor.visit(expr, "x", 1);
+        const result = visitor.visit(expr, 1);
 
         const expected = new Nodes.BinOpNode(
             new Nodes.BinOpNode(

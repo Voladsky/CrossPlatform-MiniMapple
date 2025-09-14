@@ -13,7 +13,7 @@ export class PrintVisitor extends BaseVisitor {
         const currentPrecedence = PRECEDENCE[node.operator];
         const left = this.visit(node.left, currentPrecedence);
         const right = this.visit(node.right, currentPrecedence);
-        const needsPars = currentPrecedence < args[0];
+        const needsPars = currentPrecedence <= args[0];
         if (needsPars) {
             return `(${left}${node.operator}${right})`;
         } else {
@@ -125,6 +125,34 @@ export class EvaluationVisitor extends BaseVisitor {
         if (left_result instanceof NumberNode && right_result instanceof NumberNode) {
             return new NumberNode(eval(`${left_result.value}${node.operator}${right_result.value}`));
         }
+        if (node.operator === OperationType.POWER) {
+            if (right_result instanceof NumberNode && right_result.value === 1) {
+                return left_result;
+            }
+            if (right_result instanceof NumberNode && right_result.value === 0) {
+                return new NumberNode(1);
+            }
+        }
+        if (node.operator === OperationType.MULTIPLY) {
+            if (left_result instanceof NumberNode && left_result.value === 1)
+                return right_result
+            if (right_result instanceof NumberNode && right_result.value === 1)
+                return left_result
+            if (left_result instanceof NumberNode && left_result.value === 0 ||
+                right_result instanceof NumberNode && right_result.value === 0) {
+                return new NumberNode(0);
+            }
+        }
+        if (node.operator === OperationType.ADD) {
+            if (left_result instanceof NumberNode && left_result.value === 0)
+                return right_result
+            if (right_result instanceof NumberNode && right_result.value === 0)
+                return left_result
+        }
+        if (node.operator === OperationType.SUBTRACT) {
+            if (right_result instanceof NumberNode && right_result.value === 0)
+                return left_result
+        }
         return new BinOpNode(left_result, node.operator, right_result);
     }
     visitNumberNode(node) {
@@ -132,5 +160,141 @@ export class EvaluationVisitor extends BaseVisitor {
     }
     visitVariableNode(node) {
         return node;
+    }
+}
+
+export class DistributionVisitor extends BaseVisitor {
+    visitBinOpNode(node, ...args) {
+        const left = this.visit(node.left);
+        const right = this.visit(node.right);
+
+        if (node.operator === OperationType.MULTIPLY) {
+            return this._distributeMultiplication(left, right);
+        }
+
+        if (node.operator === OperationType.POWER && node.right.value > 0) {
+            let result = node.left;
+            for (let i = 0; i < node.right.value - 1; i++) {
+                result = new BinOpNode(result, OperationType.MULTIPLY, node.left)
+            }
+            return this._distributeMultiplication(result.left, result.right);
+        }
+
+        return new BinOpNode(left, node.operator, right);
+    }
+
+    _distributeMultiplication(left, right) {
+        if (this._isAddSub(left) && this._isAddSub(right)) {
+            // (a + b) * (c + d) = a*c + a*d + b*c + b*d
+            return new BinOpNode(
+                new BinOpNode(
+                    this._distributeMultiplication(left.left, right.left),
+                    right.operator,
+                    this._distributeMultiplication(left.left, right.right)
+                ),
+                left.operator,
+                new BinOpNode(
+                    this._distributeMultiplication(left.right, right.left),
+                    right.operator,
+                    this._distributeMultiplication(left.right, right.right)
+                )
+            );
+        }
+        else if (this._isAddSub(left)) {
+            // (a + b) * c = a*c + b*c
+            return new BinOpNode(
+                this._distributeMultiplication(left.left, right),
+                left.operator,
+                this._distributeMultiplication(left.right, right)
+            );
+        }
+        else if (this._isAddSub(right)) {
+            // a * (b + c) = a*b + a*c
+            return new BinOpNode(
+                this._distributeMultiplication(left, right.left),
+                right.operator,
+                this._distributeMultiplication(left, right.right)
+            );
+        }
+        return new BinOpNode(left, OperationType.MULTIPLY, right);
+    }
+
+    _isAddSub(node) {
+        return node instanceof BinOpNode && (node.operator === OperationType.ADD || node.operator === OperationType.SUBTRACT);
+    }
+
+    visitVariableNode(node) {
+        return node;
+    }
+
+    visitNumberNode(node) {
+        return node;
+    }
+
+    visitDiffNode(node) {
+        return new DiffNode(this.visit(node.deriving));
+    }
+}
+
+export class GrouperVisitor extends BaseVisitor {
+    visitBinOpNode(node) {
+        const left = this.visit(node.left);
+        const right = this.visit(node.right);
+        if (node.operator === OperationType.ADD) {
+            return this.groupTerms(left, right);
+        }
+    }
+}
+
+export class TermDecomposer extends BaseVisitor {
+    visitBinOpNode(node) {
+        switch (node.operator) {
+            case OperationType.ADD:
+                return [...this.visit(node.left), ...this.visit(node.right)]
+            case OperationType.SUBTRACT:
+                const left_sub = this.visit(node.left)
+                const right_sub = this.visit(node.right)
+                right_sub.forEach(element => {
+                    element.coef = -element.coef;
+                });
+                return [...left_sub, ...right_sub]
+            case OperationType.MULTIPLY:
+                return [...this._multiplyTerms(this.visit(node.left), this.visit(node.right))]
+            case OperationType.POWER:
+                const left_pow = this.visit(node.left)
+                return [{ coef: 1, vars: [JSON.stringify(left_pow)], exps: { [JSON.stringify(left_pow)]: node.right.value} }]
+            default:
+                throw new Error("Only supported operations by TermDecomposer are: ADD, SUB, MUL, POW")
+        }
+    }
+    _multiplyTerms(leftTerms, rightTerms) {
+        const result = [];
+
+        for (const leftTerm of leftTerms) {
+            for (const rightTerm of rightTerms) {
+                const coef = leftTerm.coef * rightTerm.coef;
+                const exps = { ...leftTerm.exps };
+
+                // Add or merge right term exponents
+                for (const [variable, exponent] of Object.entries(rightTerm.exps)) {
+                    if (exps.hasOwnProperty(variable)) {
+                        exps[variable] += exponent;
+                    } else {
+                        exps[variable] = exponent;
+                    }
+                }
+                const vars = Object.keys(exps);
+                result.push({ coef, vars, exps });
+            }
+        }
+
+
+        return result;
+    }
+    visitNumberNode(node) {
+        return [{ coef: node.value, vars: [], exps: {} }]
+    }
+    visitVariableNode(node) {
+        return [{ coef: 1, vars: [node.name], exps: { [node.name]: 1 } }]
     }
 }

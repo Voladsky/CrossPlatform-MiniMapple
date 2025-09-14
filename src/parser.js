@@ -8,10 +8,11 @@ Grammar in BNF form:
 program   ::= expr EOF
 expr      ::= term (('+' || '-') term)*
 term      ::= factor (('*' || '/') factor)*
-factor    ::= primary ('^' primary)
+factor    ::= primary ('^' num)
 primary   ::= NUMBER
               | VARIABLE
               | '(' expr ')'
+num       ::= NUMBER
 --------------------------------------------------
 
 */
@@ -71,6 +72,11 @@ class Parser {
             return new BinOpNode(left, OperationType.POWER, right);
         }
         return left;
+    }
+    number() {
+        this.expect([TokenType.NUMBER]);
+        const res = new NumberNode(this.curTok.val);
+        this.eat([TokenType.NUMBER]);
     }
     primary() {
         let res = null;

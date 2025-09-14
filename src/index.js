@@ -1,14 +1,22 @@
-document.addEventListener('DOMContentLoaded',setup)
+import { MiniMaple } from "./miniMaple";
 
-function setup() {
-    document.getElementById('demoButton').onclick = addSomething;
-}
+document.getElementById('diffForm').addEventListener('submit', function (e) {
+    e.preventDefault();
 
-function addSomething(){
-    const someDummyDiv = document.createElement('div');
-    someDummyDiv.classList.add('generated');
-    const count = document.getElementsByClassName('generated').length;
-    someDummyDiv.innerHTML = `I was created by JS! There are already ${count} of my friends!`;
-    const container = document.getElementById('container');
-    container.appendChild(someDummyDiv);
-}
+    const expression = document.getElementById('expression').value;
+    const literal = document.getElementById('literal').value;
+    const outputElement = document.getElementById('output');
+
+    if (!expression) {
+        outputElement.textContent = 'Please enter an expression.';
+        return;
+    }
+
+    try {
+        const miniMaple = new MiniMaple();
+        const derivative = miniMaple.differentiate(expression, literal);
+        outputElement.innerHTML = `<strong>Expression:</strong> ${expression}<br><strong>Derivative:</strong> ${derivative}`;
+    } catch (error) {
+        outputElement.textContent = 'Error: ' + error.message;
+    }
+});

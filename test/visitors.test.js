@@ -1,5 +1,5 @@
 import * as Nodes from "../src/astnodes.js"
-import { PrintVisitor, DerivationVisitor, EvaluationVisitor, DistributionVisitor, GrouperVisitor, TermDecomposer } from "../src/visitors.js"
+import { PrintVisitor, DerivationVisitor, EvaluationVisitor, DistributionVisitor, GrouperVisitor, TermDecomposerVisitor, DepthCalculationVisitor } from "../src/visitors.js"
 
 describe("PrintVisitor", () => {
     it("should iterate over AST and print it into a single string", () => {
@@ -140,6 +140,38 @@ describe("DerivationVisitor", () => {
             )
         );
         expect(result).toEqual(expected);
+    })
+    it("should propagate to the lowest if depth equals to -1", () => {
+        // (x + y) + (x + y)
+        const expected = new Nodes.BinOpNode(
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("x"),
+                Nodes.OperationType.ADD,
+                new Nodes.VariableNode("y")
+            ),
+            Nodes.OperationType.ADD,
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode("x"),
+                Nodes.OperationType.ADD,
+                new Nodes.VariableNode("y")
+            )
+        )
+        const visitor = new DerivationVisitor();
+        expect(visitor.visit(expected, -1)).toEqual(
+            new Nodes.BinOpNode(
+                new Nodes.BinOpNode(
+                    new Nodes.DiffNode(new Nodes.VariableNode("x")),
+                    Nodes.OperationType.ADD,
+                    new Nodes.DiffNode(new Nodes.VariableNode("y"))
+                ),
+                Nodes.OperationType.ADD,
+                new Nodes.BinOpNode(
+                    new Nodes.DiffNode(new Nodes.VariableNode("x")),
+                    Nodes.OperationType.ADD,
+                    new Nodes.DiffNode(new Nodes.VariableNode("y"))
+                )
+            )
+        )
     })
 })
 
@@ -392,7 +424,7 @@ describe("DistributionVisitor", () => {
 })
 
 describe("TermDecomposerVisitor", () => {
-    const decomposer = new TermDecomposer();
+    const decomposer = new TermDecomposerVisitor();
     const distributor = new DistributionVisitor();
     describe("Basic decomposition", () => {
         it("should decompose a number", () => {
@@ -514,10 +546,30 @@ describe("TermDecomposerVisitor", () => {
                 new Nodes.NumberNode(-1)
             )
             const left = [
-                {coef: 1, vars: ["x"], exps: {x: 1}},
-                {coef: 5, vars: [], exps: {}},
+                { coef: 1, vars: ["x"], exps: { x: 1 } },
+                { coef: 5, vars: [], exps: {} },
             ];
-            expect(decomposer.visit(tree)).toEqual([{ coef: 1, vars: [JSON.stringify(left)], exps: { [JSON.stringify(left)]: -1} }])
+            expect(decomposer.visit(tree)).toEqual([{ coef: 1, vars: [JSON.stringify(left)], exps: { [JSON.stringify(left)]: -1 } }])
         })
+    })
+})
+describe("DepthCalculationVisitor", () => {
+    it("should calculate the depth of an AST", () => {
+        // a * (b - (c - d))
+        const tree = new Nodes.BinOpNode(
+            new Nodes.VariableNode('a'),
+            Nodes.OperationType.MULTIPLY,
+            new Nodes.BinOpNode(
+                new Nodes.VariableNode('b'),
+                Nodes.OperationType.SUBTRACT,
+                new Nodes.BinOpNode(
+                    new Nodes.VariableNode('c'),
+                    Nodes.OperationType.SUBTRACT,
+                    new Nodes.VariableNode('d')
+                )
+            )
+        );
+        const visitor = new DepthCalculationVisitor();
+        expect(visitor.visit(tree)).toEqual(3);
     })
 })

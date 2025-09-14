@@ -43,16 +43,29 @@ export class TermGrouper {
 }
 
 export class TermConverter {
-    // Alternative: Simple recursive converter
     toAST(terms) {
         if (terms.length === 0) return new NumberNode(0);
         if (terms.length === 1) return this.toNode(terms[0]);
 
-        return new BinOpNode(
-            this.toNode(terms[0]),
-            OperationType.ADD,
-            this.toAST(terms.slice(1)),
-        );
+        let result = this.toNode(terms[0]);
+        for (const term of terms.slice(1)) {
+            if (term.coef > 0) {
+                result = new BinOpNode(
+                    result,
+                    OperationType.ADD,
+                    this.toNode(term)
+                )
+            }
+            else {
+                term.coef *= -1
+                result = new BinOpNode(
+                    result,
+                    OperationType.SUBTRACT,
+                    this.toNode(term)
+                )
+            }
+        }
+        return result;
     }
     toNode(term) {
         let result = new NumberNode(term.coef)

@@ -31,6 +31,40 @@ export class PrintVisitor extends BaseVisitor {
     }
 }
 
+export class MathJaxVisitor extends BaseVisitor {
+        visitBinOpNode(node, ...args) {
+        const currentPrecedence = PRECEDENCE[node.operator];
+        const left = this.visit(node.left, currentPrecedence);
+        const right = this.visit(node.right, currentPrecedence);
+        const needsPars = currentPrecedence <= args[0];
+        let res;
+        switch (node.operator) {
+            case OperationType.MULTIPLY:
+                res = `${left}${right}`;
+                break;
+            case OperationType.DIVIDE:
+                res = `\\frac{${left}}{${right}}`
+                break;
+            default:
+                res = `${left}${node.operator}${right}`;
+        }
+        if (needsPars) {
+            return `(${res})`;
+        } else {
+            return `${res}`;
+        }
+    }
+    visitVariableNode(node) {
+        return node.name;
+    }
+    visitNumberNode(node) {
+        return node.value.toString();
+    }
+    visitDiffNode(node) {
+        return `${this.visit(node.deriving, 999)}'`;
+    }
+}
+
 export class DerivationVisitor extends BaseVisitor {
     visit(node, ...args) {
         if (args[0] === 0) {
@@ -236,7 +270,7 @@ export class DistributionVisitor extends BaseVisitor {
     }
 }
 
-export class TermDecomposer extends BaseVisitor {
+export class TermDecomposerVisitor extends BaseVisitor {
     visitBinOpNode(node) {
         switch (node.operator) {
             case OperationType.ADD:
@@ -286,5 +320,20 @@ export class TermDecomposer extends BaseVisitor {
     }
     visitVariableNode(node) {
         return [{ coef: 1, vars: [node.name], exps: { [node.name]: 1 } }]
+    }
+}
+
+export class DepthCalculationVisitor extends BaseVisitor {
+    visitBinOpNode(node) {
+        return Math.max(this.visit(node.left), this.visit(node.right)) + 1;
+    }
+    visitDiffNode(node) {
+        return this.visit(node.deriving);
+    }
+    visitNumberNode(node) {
+        return 0;
+    }
+    visitVariableNode(node) {
+        return 0;
     }
 }

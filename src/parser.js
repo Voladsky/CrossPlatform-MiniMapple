@@ -45,11 +45,11 @@ class Parser {
         return result;
     }
     expr() {
-        const left = this.term();
+        let left = this.term();
         while (this.check([TokenType.PLUS, TokenType.MINUS])) {
             const op = this.eat([TokenType.PLUS, TokenType.MINUS]);
             const right = this.term();
-            return new BinOpNode(left, op === TokenType.PLUS ? OperationType.ADD : OperationType.SUBTRACT, right);
+            left = new BinOpNode(left, op === TokenType.PLUS ? OperationType.ADD : OperationType.SUBTRACT, right);
         }
         return left;
 
@@ -68,7 +68,7 @@ class Parser {
         const left = this.primary();
         if (this.check([TokenType.CARET])) {
             this.eat([TokenType.CARET]);
-            const right = this.primary();
+            const right = this.number();
             return new BinOpNode(left, OperationType.POWER, right);
         }
         return left;
@@ -77,6 +77,7 @@ class Parser {
         this.expect([TokenType.NUMBER]);
         const res = new NumberNode(this.curTok.val);
         this.eat([TokenType.NUMBER]);
+        return res;
     }
     primary() {
         let res = null;
@@ -109,4 +110,4 @@ class ParserError extends Error {
     }
 }
 
-export {Parser}
+export {Parser, ParserError}

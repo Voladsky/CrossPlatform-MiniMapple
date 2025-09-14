@@ -103,7 +103,8 @@ export class DerivationVisitor extends BaseVisitor {
 }
 
 export class EvaluationVisitor extends BaseVisitor {
-    visitDiffNode(node, literal) {
+    visitDiffNode(node, ...args) {
+        const literal = args[0];
         const value = this._derive(node.deriving, literal);
         return new NumberNode(value);
     }
@@ -119,7 +120,6 @@ export class EvaluationVisitor extends BaseVisitor {
         throw new Error("Derivation is not propagated enough")
     }
     visitBinOpNode(node, ...args) {
-        const literal = args[0];
         const left_result = this.visit(node.left, ...args);
         const right_result = this.visit(node.right, ...args);
         if (left_result instanceof NumberNode && right_result instanceof NumberNode) {
@@ -233,16 +233,6 @@ export class DistributionVisitor extends BaseVisitor {
 
     visitDiffNode(node) {
         return new DiffNode(this.visit(node.deriving));
-    }
-}
-
-export class GrouperVisitor extends BaseVisitor {
-    visitBinOpNode(node) {
-        const left = this.visit(node.left);
-        const right = this.visit(node.right);
-        if (node.operator === OperationType.ADD) {
-            return this.groupTerms(left, right);
-        }
     }
 }
 

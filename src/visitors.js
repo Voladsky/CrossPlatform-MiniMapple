@@ -32,7 +32,7 @@ export class PrintVisitor extends BaseVisitor {
 }
 
 export class MathJaxVisitor extends BaseVisitor {
-        visitBinOpNode(node, ...args) {
+    visitBinOpNode(node, ...args) {
         const currentPrecedence = PRECEDENCE[node.operator];
         const left = this.visit(node.left, currentPrecedence);
         const right = this.visit(node.right, currentPrecedence);
@@ -46,7 +46,7 @@ export class MathJaxVisitor extends BaseVisitor {
                 res = `\\frac{${left}}{${right}}`
                 break;
             default:
-                res = `${left}${node.operator}${right}`;
+                res = `{${left}}${node.operator}{${right}}`;
         }
         if (needsPars) {
             return `(${res})`;
@@ -157,6 +157,9 @@ export class EvaluationVisitor extends BaseVisitor {
         const left_result = this.visit(node.left, ...args);
         const right_result = this.visit(node.right, ...args);
         if (left_result instanceof NumberNode && right_result instanceof NumberNode) {
+            if (node.operator === OperationType.POWER) {
+                return new NumberNode(eval(`(${left_result.value})**(${right_result.value})`));
+            }
             return new NumberNode(eval(`${left_result.value}${node.operator}${right_result.value}`));
         }
         if (node.operator === OperationType.POWER) {
@@ -270,13 +273,75 @@ export class DistributionVisitor extends BaseVisitor {
     }
 }
 
+export class RemoveDivideVisitor extends BaseVisitor {
+    visitNumberNode(node) {
+        return node;
+    }
+    visitVariableNode(node) {
+        return node;
+    }
+    visitDiffNode(node) {
+        return node;
+    }
+    visitBinOpNode(node) {
+        const left = this.visit(node.left);
+        const right = this.visit(node.right);
+        if (node.operator === OperationType.DIVIDE) {
+            if (right.operator === OperationType.POWER) {
+                right.right.value *= -1;
+                return new BinOpNode(left, OperationType.MULTIPLY,
+                    right
+                );
+            }
+            return new BinOpNode(left, OperationType.MULTIPLY,
+                new BinOpNode(right, OperationType.POWER, new NumberNode(-1))
+            );
+
+        }
+        else {
+            return new BinOpNode(left, node.operator, right)
+        }
+    }
+}
+
+export class ReturnDivideVisitor extends BaseVisitor {
+    visitNumberNode(node) {
+        return node;
+    }
+    visitVariableNode(node) {
+        return node;
+    }
+    visitDiffNode(node) {
+        return node;
+    }
+    visitBinOpNode(node) {
+        const left = this.visit(node.left);
+        const right = this.visit(node.right);
+        if (node.operator === OperationType.POWER && node.right.value < 0) {
+            if (left.operator === OperationType.POWER) {
+                left.right.value *= -node.right.value;
+                return new BinOpNode(new NumberNode(1), OperationType.DIVIDE,
+                    left
+                );
+            }
+            return new BinOpNode(new NumberNode(1), OperationType.DIVIDE,
+                new BinOpNode(left, OperationType.POWER, new NumberNode(-node.right.value))
+            );
+
+        }
+        else {
+            return new BinOpNode(left, node.operator, right)
+        }
+    }
+}
+
 export class TermDecomposerVisitor extends BaseVisitor {
     visitBinOpNode(node) {
         switch (node.operator) {
             case OperationType.ADD:
                 return [...this.visit(node.left), ...this.visit(node.right)]
             case OperationType.SUBTRACT:
-                const left_sub = this.visit(node.left)
+                const left_sub = this.visit(node.left);
                 const right_sub = this.visit(node.right)
                 right_sub.forEach(element => {
                     element.coef = -element.coef;
@@ -286,7 +351,7 @@ export class TermDecomposerVisitor extends BaseVisitor {
                 return [...this._multiplyTerms(this.visit(node.left), this.visit(node.right))]
             case OperationType.POWER:
                 const left_pow = this.visit(node.left)
-                return [{ coef: 1, vars: [JSON.stringify(left_pow)], exps: { [JSON.stringify(left_pow)]: node.right.value} }]
+                return [{ coef: 1, vars: [JSON.stringify(left_pow)], exps: { [JSON.stringify(left_pow)]: node.right.value } }]
             default:
                 throw new Error("Only supported operations by TermDecomposer are: ADD, SUB, MUL, POW")
         }

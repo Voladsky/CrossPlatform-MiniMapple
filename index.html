@@ -1,21 +1,49 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Lesson 4</title>
-    <meta charset="UTF-8"/>
-
+    <meta charset="UTF-8" />
+    <title>JADE</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <!-- MathJax Library -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="src/index.js" type="module"></script>
 </head>
 
 <body>
-<h1>Implement the symbolic diff here</h1>
-<div id="container">
+    <h1>JADE</h1>
+    <h2>Just Another Differentiation Evaulator</h2>
+    <div class="container">
+        <form id="diffForm">
+            <div class="form-group">
+                <label for="expression">Enter the expression:</label>
+                <input type="text" id="expression" placeholder="e.g., x^2 + 3*x + 5" required>
+                <label for="literal">Enter the literal for which to find derivative:</label>
+                <input type="text" id="literal" placeholder="e.g., x" required>
+            </div>
 
-</div>
-<div>
-    <button id="demoButton">
-        Add something
-    </button>
-</div>
+            <button type="submit">Differentiate</button>
+        </form>
+
+        <div class="output" id="output">
+            Result will appear here...
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <p id="logContent"></div>
+        </div>
+    </div>
 </body>
+
 </html>
